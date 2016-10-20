@@ -1,13 +1,19 @@
 #coding: utf-8
 require "openssl"
+require "base64"
 
+# ===============================================
+# 暗号・復号 ユーティリティクラス
+# ===============================================
 class AngoUtil
 
+  # 初期化 (saltを引数に渡すことが可能)
   def initialize(salt=nil)
     @key = nil
     @salt = salt || OpenSSL::Random.random_bytes(8)
   end
 
+  # Keyの登録
   def create_key(pswd)
 
     enc = OpenSSL::Cipher.new("AES-256-CBC")
@@ -22,6 +28,7 @@ class AngoUtil
 
   end
 
+  # 復号
   def decrypt(data)
 
     dec = OpenSSL::Cipher.new("AES-256-CBC")
@@ -38,6 +45,7 @@ class AngoUtil
 
   end
 
+  # 暗号化
   def encrypt(data)
 
     enc = OpenSSL::Cipher.new("AES-256-CBC")
@@ -53,6 +61,42 @@ class AngoUtil
     encrypted_data
   end
   attr_reader :salt
+end
+
+# ===============================================
+# RAWファイルを暗号化するクラス
+# ===============================================
+class AngoFileUtil
+
+  # ファイル暗号化
+  def encrypt_file(pass, inputfile, enc_dir, salt_dir)
+
+    outputfile = "./#{enc_dir}/#{File.basename(inputfile, ".*")}.enc"
+    saltfile = "./#{salt_dir}/#{File.basename(inputfile, ".*")}.salt"
+
+    ango = AngoUtil.new()
+    ango.create_key(pass)
+    data = ""
+
+    open(inputfile, "r:utf-8") do |f|
+      data = f.read
+    end
+
+    ango_str = ango.encrypt(data)
+
+    open(outputfile, "w:utf-8") do |f|
+      f.puts Base64.encode64(ango_str)
+    end
+
+    open(saltfile, "w:utf-8") do |f|
+      f.puts Base64.encode64(ango.salt)
+    end
+
+    batch = "./#{File.basename(inputfile, ".*")}.ps1"
+    open(batch, "w:utf-8") do |f|
+      f.puts "ruby decrypt.rb #{File.basename(inputfile, ".*")}"
+    end
+  end
 end
 
 if __FILE__ == $0

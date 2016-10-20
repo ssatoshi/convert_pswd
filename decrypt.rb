@@ -1,3 +1,4 @@
+#coding: utf-8
 require "base64"
 require "./ango_util.rb"
 
@@ -22,23 +23,24 @@ enc_directory = "./enc_files/"
 salt_directory = "./salt/"
 
 unless ARGV.size == 1
+  # 引数は必ず１つ必要
   puts "USAGE: decrypt.rb [FILE]"
   exit
 end
 
-target = ARGV[0]
-target = target.chomp
+# デコード対象ファイル
+target = ARGV[0].chomp
 
+# パスワード
 puts "Enter password:"
-pass = STDIN.gets
-pass = pass.chomp
+pass = STDIN.gets.chomp
 
 encrypt_data = open_file("./#{enc_directory}#{target}.enc")
-salt_data = open_file("./#{salt}#{target}.salt")
+salt_data = open_file("./#{salt_directory}#{target}.salt")
 
 ango = AngoUtil.new(salt_data)
 ango.create_key(pass)
 
-open("./#{target}.txt", "w") do |f|
+open("./______.txt", "w") do |f|
   f.puts ango.decrypt(encrypt_data)
 end
